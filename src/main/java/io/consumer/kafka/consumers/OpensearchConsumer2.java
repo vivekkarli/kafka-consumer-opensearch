@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
+import org.opensearch.action.bulk.BulkRequest;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
@@ -20,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import com.google.gson.JsonParser;
 
 import io.consumer.kafka.configurations.OpensearchClient;
 
@@ -76,11 +79,15 @@ public class OpensearchConsumer2 {
 					log.info("partition: {}", consumerRecord.partition());
 					log.info("offset: {}", consumerRecord.offset());
 
+					String consumerRecordId = getIdFromJson(consumerRecord.value());
+
 					IndexRequest indexRequest = new IndexRequest("wikimedia")
-							.source(consumerRecord.value(), XContentType.JSON).id(topic);
+							.source(consumerRecord.value(), XContentType.JSON).id(consumerRecordId);
 
 					IndexResponse indexResponse = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
-					log.info("inserted record into opensearch, indexResponse.getId(): {}", indexResponse.getId());
+					log.info("inserted record id: {} into opensearch, indexResponse.getId(): {}", consumerRecordId,
+							indexResponse.getId());
+
 
 				}
 
@@ -119,4 +126,14 @@ public class OpensearchConsumer2 {
 		});
 
 	}
+
+	public static String getIdFromJson(String jsonString) {
+		return JsonParser.parseString(jsonString)
+				.getAsJsonObject()
+				.get("meta").getAsJsonObject()
+				.get("id")
+				.getAsString();
+
+	}
+
 }
