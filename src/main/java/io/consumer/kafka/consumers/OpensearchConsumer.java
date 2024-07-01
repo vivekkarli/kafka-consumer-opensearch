@@ -7,6 +7,7 @@ import java.util.Properties;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.CooperativeStickyAssignor;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -35,6 +36,9 @@ public class OpensearchConsumer {
 		props.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 		props.setProperty(ConsumerConfig.GROUP_ID_CONFIG, group);
 		props.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+		
+		//cooperative re-balance
+		props.setProperty(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, CooperativeStickyAssignor.class.getName());
 
 		// step-2 create consumer
 		KafkaConsumer<String, String> kafkaConsumer = new KafkaConsumer<>(props);
@@ -44,6 +48,7 @@ public class OpensearchConsumer {
 
 		// add shutdown hook
 		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
 			public void run() {
 
 				log.info("shutdown detected. exiting by calling consumer.wakeup()");
@@ -84,9 +89,10 @@ public class OpensearchConsumer {
 		} catch (WakeupException we) {
 			log.info("consumer started to shutdown");
 		} catch (Exception e) {
-			log.error("unexpected error occured", e);
+			log.error("unexpected error occured in the consumer", e);
 		} finally {
 			kafkaConsumer.close();
+			log.info("The consumer is now gracefully closed");
 		}
 
 	}
