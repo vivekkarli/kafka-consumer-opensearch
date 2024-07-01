@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.opensearch.action.bulk.BulkRequest;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
@@ -71,6 +72,8 @@ public class OpensearchConsumer2 {
 
 				ConsumerRecords<String, String> consumerRecords = kafkaConsumer.poll(Duration.ofMillis(1000));
 
+				BulkRequest bulkRequest = new BulkRequest();
+
 				for (ConsumerRecord<String, String> consumerRecord : consumerRecords) {
 
 					log.info("key: {}", consumerRecord.key());
@@ -84,11 +87,20 @@ public class OpensearchConsumer2 {
 					IndexRequest indexRequest = new IndexRequest("wikimedia")
 							.source(consumerRecord.value(), XContentType.JSON).id(consumerRecordId);
 
-					IndexResponse indexResponse = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
-					log.info("inserted record id: {} into opensearch, indexResponse.getId(): {}", consumerRecordId,
-							indexResponse.getId());
+//					IndexResponse indexResponse = openSearchClient.index(indexRequest, RequestOptions.DEFAULT);
+//					log.info("inserted record id: {} into opensearch, indexResponse.getId(): {}", consumerRecordId,
+//							indexResponse.getId());
 
+					bulkRequest.add(indexRequest);
 
+				}
+
+				if (bulkRequest.numberOfActions() > 0) {
+					BulkResponse bulkResponse = openSearchClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+
+					log.info("{} records inserted into opensearch", bulkResponse.getItems().length);
+
+					kafkaConsumer.commitAsync();
 				}
 
 			}
@@ -130,7 +142,8 @@ public class OpensearchConsumer2 {
 	public static String getIdFromJson(String jsonString) {
 		return JsonParser.parseString(jsonString)
 				.getAsJsonObject()
-				.get("meta").getAsJsonObject()
+				.get("meta")
+				.getAsJsonObject()
 				.get("id")
 				.getAsString();
 
