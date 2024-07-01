@@ -25,6 +25,22 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
+		<!--
+		https://mvnrepository.com/artifact/org.opensearch.client/opensearch-rest-high-level-client -->
+		<dependency>
+			<groupId>org.opensearch.client</groupId>
+			<artifactId>opensearch-rest-high-level-client</artifactId>
+			<version>2.15.0</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.11.0</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

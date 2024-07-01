@@ -21,7 +21,7 @@ public class OpensearchConsumer {
 
 	private final Logger log = LoggerFactory.getLogger(OpensearchConsumer.class);
 
-	@Scheduled(initialDelay = 2000)
+	//@Scheduled(initialDelay = 2000)
 	public void runOpensearchConsumer() {
 
 		log.info("Thread: {} is vitual?: {}", Thread.currentThread().getName(), Thread.currentThread().isVirtual());
